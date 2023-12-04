@@ -14,6 +14,8 @@ from pathlib import Path
 INPUT_MODE = 'cli' # Sets username input mode to either 'cli' or 'card'
 VERSION = '0.1'
 MODULE_PATH = Path(__file__).parent / 'modules'
+y = 0
+hy = 0
 
 class ansi:
     HEADER = '\033[95m'
@@ -51,24 +53,26 @@ def main():
     modules = init()
     while 1:
         input('  Press any key to enter new username\n')
+        print((ansi.UP + ansi.CLEAR) * (len(modules)+3))
         check(modules)
 
 def init():
     printLogo()
-    progressBar(0, 0, 12, 0)
+    progressBar(0, 0, 12, 1, 1)
     time.sleep(.3)
-    print(ansi.BOLD + 'Initializing userline ' + VERSION + ansi.ENDC)
+    print(ansi.BOLD + '\nInitializing userline ' + VERSION + ansi.ENDC)
     time.sleep(.3)
-    progressBar(2, 0, 12, 2)
+    progressBar(2, 0, 12, 3, 0)
     modules = getModules()
 
     i = 0
     while i < 6:
         i += 0.4
-        progressBar(6+i, 0, 12, 1)
+        progressBar(6+i, 0, 12, 1, 0)
         time.sleep(.05)
 
     print(ansi.UP + ansi.CLINE)
+    print('\n' * (len(modules)+1))
     return modules
 
 
@@ -83,9 +87,9 @@ def getModules():
         x += 1
         print(ansi.UP*x + ansi.CLINE + '    ' + str(x) + ' modules found' + ansi.DOWN*(x-1))
         print('      ❭ ' + str(path.name))
-        progressBar(2, 2, 12, x+4)
+        progressBar(2, 2, 12, x+5, 0)
         time.sleep(.2)
-    progressBar(4, 0, 12, x+4)
+    progressBar(4, 0, 12, x+5, 0)
 
     print(ansi.UP*(x+2) +  '  Importing modules...')
     print('    . modules imported')
@@ -94,33 +98,41 @@ def getModules():
         x += 1
         print(ansi.UP*x + ansi.CLINE + '    ' + str(x) + ' modules imported' + ansi.DOWN*(x-1))
         print('      ❭ ' + ansi.B_GREEN + str(module.name) + ansi.ENDC)
-        progressBar(4, 2, 12, x+4)
+        progressBar(4, 2, 12, x+5, 0)
         time.sleep(.2)
-    progressBar(6, 0, 12, x+4)
-    print((ansi.UP + ansi.CLINE) * (x+4))
+    progressBar(6, 0, 12, x+5, 0)
+    print((ansi.UP + ansi.CLINE) * (x+5))
     return module_list
 
 def getUsername():
     '''Obtains username and returns it using 'INPUT_MODE' method'''
     if INPUT_MODE == 'cli':     
-        print((ansi.UP + ansi.CLINE)*2 + ansi.BOLD + '  Enter username: ' + ansi.UP + ansi.ENDC)
+        print((ansi.UP + ansi.CLINE)*2 + ansi.BOLD + '\n  Enter username: ' + ansi.UP + ansi.ENDC)
         return input(ansi.RIGHT*18)
 
 def check(x):
     username = getUsername()
     print(ansi.UP + ansi.CLINE + ansi.BOLD + '  Username : ' + ansi.BR_GREEN + username + ansi.ENDC)
     print(ansi.UP)
-    progressBar(1, 0, len(x)+1, 2)
+    progressBar(1, 0, len(x)+1, 3, 1)
     j = 0
     for i in x:
-        progressBar(j+1, 1, len(x)+1, 2+j)
-        time.sleep(1)
+        progressBar(j+1, 1, len(x)+1, 3+j, 0)
+        time.sleep(.5)
         print('    ok!')
-        progressBar(j+2, 0, len(x)+1, 3+j)
+        progressBar(j+2, 0, len(x)+1, 4+j, 0)
         j += 1
-    print((ansi.UP + ansi.CLEAR) * (j+2))
 
-def progressBar(step, h_step, steps, dis):
+def progressBar(step, h_step, steps, dis, r):
+    global y
+    global hy
+    if r == 0:
+        dy = y
+        dhy = hy
+    else:
+        dy = 0
+        dhy = 0
+
     x = 40 / steps
     y = ceil(x*step)
     hy = ceil(x*h_step)
@@ -131,10 +143,26 @@ def progressBar(step, h_step, steps, dis):
     elif hy + y > 40:
         hy = hy-1
     
+    while (dy < y)|(dhy < hy):
+        while (dhy < hy):
+            dhy += 1
+            progressBarDraw(y, dhy, dis)
+            time.sleep(.1)
+        while (dy < y):
+            dy += 1
+            if dhy > 0:
+                dhy = dhy - 1
+            progressBarDraw(dy, dhy, dis)
+            time.sleep(.1)
+        
+
+    progressBarDraw(y, hy, dis)
+
+def progressBarDraw(y, hy, dis):
     print(
         ansi.UP * dis + ansi.CLINE + ansi.ENDC 
         + '❬' + ('▬' * y) 
-        + ansi.BLINK + ('▰' * hy) + ansi.ENDC 
+        + ('▰' * hy) + ansi.ENDC 
         + ansi.DIM + ('▬' * (40-(y+hy))) + ansi.ENDC 
         + '❭' + ansi.DOWN * (dis-1)
         )
@@ -145,7 +173,7 @@ def printLogo():
                        ___        
      __ _____ ___ ____/ (_)__  ___ 
     / // (_-</ -_) __/ / / _ \/ -_)
-    \_,_/___/\__/_/ /_/_/_//_/\__/ ''' + VERSION + '\n'
+    \_,_/___/\__/_/ /_/_/_//_/\__/ ''' + VERSION + '\n'*2
         + '\n' * 16 + ansi.UP * 16 + ansi.ENDC
         )
     time.sleep(.2)
